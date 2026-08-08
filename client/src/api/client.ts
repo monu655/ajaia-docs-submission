@@ -36,6 +36,8 @@ function getCurrentUserId(): string | null {
   return localStorage.getItem("ajaia_user_id");
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const userId = getCurrentUserId();
   const headers: Record<string, string> = {
@@ -45,7 +47,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...(userId ? { "x-user-id": userId } : {}),
     ...(init.headers as Record<string, string>),
   };
-  const res = await fetch(`/api${path}`, { ...init, headers });
+  const res = await fetch(`${API_BASE}/api${path}`, { ...init, headers });
   if (!res.ok) {
     let message = res.statusText;
     try {
@@ -108,3 +110,4 @@ export const api = {
 };
 
 export { ApiError, getCurrentUserId };
+
