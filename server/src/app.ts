@@ -122,7 +122,7 @@ app.put("/api/documents/:id", (req: AuthedRequest, res) => {
 });
 app.delete("/api/documents/:id", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id as string) as unknown as
     | DocumentRow
     | undefined;
   if (!doc || doc.owner_id !== userId) {
@@ -135,7 +135,7 @@ app.delete("/api/documents/:id", (req: AuthedRequest, res) => {
 });
 app.post("/api/documents/:id/share", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id as string) as unknown as
     | DocumentRow
     | undefined;
   if (!doc || doc.owner_id !== userId) {
@@ -155,7 +155,7 @@ app.post("/api/documents/:id/share", (req: AuthedRequest, res) => {
 });
 app.delete("/api/documents/:id/share/:userId", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id as string) as unknown as
     | DocumentRow
     | undefined;
   if (!doc || doc.owner_id !== userId) {
@@ -223,7 +223,7 @@ app.get("/api/attachments/:id/download", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const row = db
     .prepare("SELECT * FROM attachments WHERE id = ?")
-    .get(req.params.id) as unknown as
+    .get(req.params.id as string) as unknown as
     | { id: string; document_id: string; filename: string; original_name: string }
     | undefined;
   if (!row) return res.status(404).json({ error: "Attachment not found" });
