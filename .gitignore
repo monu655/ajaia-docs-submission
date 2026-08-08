@@ -1,0 +1,10 @@
+node_modules/
+dist/
+server/data/*.db
+server/data/*.db-shm
+server/data/*.db-wal
+server/uploads/*
+!server/uploads/.gitkeep
+server/src/__tests__/test.db*
+.env
+.DS_Store
