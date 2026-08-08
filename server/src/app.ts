@@ -8,39 +8,27 @@ import { db } from "./db";
 import { requireUser, AuthedRequest } from "./auth";
 import { fileToHtml } from "./importFile";
 import { DocumentRow, User } from "./types";
-
 const uploadsDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
 const upload = multer({
   dest: uploadsDir,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB, generous enough for this scope
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
-
 export const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
-
 const now = () => new Date().toISOString();
-
-// ---- Users (for the login picker and the share dialog) ----
 app.get("/api/users", (_req, res) => {
   const users = db.prepare("SELECT id, name, email FROM users").all();
   res.json(users);
 });
-
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
-
-// Everything below requires a "logged in" (seeded) user.
 app.use(requireUser);
-
-// ---- Documents ----
-
 app.get("/api/documents", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const owned = db
     .prepare("SELECT * FROM documents WHERE owner_id = ? ORDER BY updated_at DESC")
-    .all(userId) as DocumentRow[];
+    .all(userId) as unknown as DocumentRow[];
   const shared = db
     .prepare(
       `SELECT d.* FROM documents d
@@ -48,13 +36,12 @@ app.get("/api/documents", (req: AuthedRequest, res) => {
        WHERE s.user_id = ?
        ORDER BY d.updated_at DESC`
     )
-    .all(userId) as DocumentRow[];
+    .all(userId) as unknown as DocumentRow[];
   res.json({
     owned: owned.map(toDocSummary),
     shared: shared.map(toDocSummary),
   });
 });
-
 function toDocSummary(d: DocumentRow) {
   return {
     id: d.id,
@@ -64,7 +51,6 @@ function toDocSummary(d: DocumentRow) {
     updatedAt: d.updated_at,
   };
 }
-
 app.post("/api/documents", (req: AuthedRequest, res) => {
   const { title } = req.body as { title?: string };
   if (!title || !title.trim()) {
@@ -78,9 +64,8 @@ app.post("/api/documents", (req: AuthedRequest, res) => {
   ).run(id, title.trim(), req.user!.id, ts, ts);
   res.status(201).json(getDocOr404(id, req.user!.id, res, true));
 });
-
 function getAccessibleDoc(id: string, userId: string): DocumentRow | undefined {
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(id) as
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(id) as unknown as
     | DocumentRow
     | undefined;
   if (!doc) return undefined;
@@ -90,7 +75,6 @@ function getAccessibleDoc(id: string, userId: string): DocumentRow | undefined {
     .get(id, userId);
   return share ? doc : undefined;
 }
-
 function getDocOr404(id: string, userId: string, res: express.Response, skipSend = false) {
   const doc = getAccessibleDoc(id, userId);
   if (!doc) {
@@ -118,16 +102,13 @@ function getDocOr404(id: string, userId: string, res: express.Response, skipSend
   if (!skipSend) res.json(payload);
   return payload;
 }
-
 app.get("/api/documents/:id", (req: AuthedRequest, res) => {
   getDocOr404(req.params.id as string, req.user!.id, res);
 });
-
 app.put("/api/documents/:id", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const doc = getAccessibleDoc(req.params.id as string, userId);
   if (!doc) return res.status(404).json({ error: "Document not found" });
-
   const { title, content } = req.body as { title?: string; content?: string };
   if (title !== undefined && !title.trim()) {
     return res.status(400).json({ error: "Title cannot be empty" });
@@ -139,10 +120,9 @@ app.put("/api/documents/:id", (req: AuthedRequest, res) => {
   ).run(newTitle, newContent, now(), doc.id);
   getDocOr404(doc.id, userId, res);
 });
-
 app.delete("/api/documents/:id", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as
     | DocumentRow
     | undefined;
   if (!doc || doc.owner_id !== userId) {
@@ -153,12 +133,9 @@ app.delete("/api/documents/:id", (req: AuthedRequest, res) => {
   db.prepare("DELETE FROM documents WHERE id = ?").run(doc.id);
   res.status(204).send();
 });
-
-// ---- Sharing ----
-
 app.post("/api/documents/:id/share", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as
     | DocumentRow
     | undefined;
   if (!doc || doc.owner_id !== userId) {
@@ -171,16 +148,14 @@ app.post("/api/documents/:id/share", (req: AuthedRequest, res) => {
   }
   const target = db.prepare("SELECT id FROM users WHERE id = ?").get(targetUserId);
   if (!target) return res.status(404).json({ error: "Target user not found" });
-
   db.prepare(
     "INSERT OR IGNORE INTO shares (document_id, user_id, permission) VALUES (?, ?, 'edit')"
   ).run(doc.id, targetUserId);
   getDocOr404(doc.id, userId, res);
 });
-
 app.delete("/api/documents/:id/share/:userId", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as
     | DocumentRow
     | undefined;
   if (!doc || doc.owner_id !== userId) {
@@ -188,13 +163,10 @@ app.delete("/api/documents/:id/share/:userId", (req: AuthedRequest, res) => {
   }
   db.prepare("DELETE FROM shares WHERE document_id = ? AND user_id = ?").run(
     doc.id,
-    req.params.userId
+    req.params.userId as string
   );
   getDocOr404(doc.id, userId, res);
 });
-
-// ---- File upload: create a new document from a .txt/.md file ----
-
 app.post(
   "/api/documents/import",
   upload.single("file"),
@@ -208,7 +180,7 @@ app.post(
         .json({ error: "Only .txt and .md files can be imported as documents" });
     }
     const raw = fs.readFileSync(req.file.path, "utf-8");
-    fs.unlink(req.file.path, () => {}); // we only needed it to read the text
+    fs.unlink(req.file.path, () => {});
     const html = fileToHtml(raw, ext);
     const title = path.basename(req.file.originalname, ext) || "Imported document";
     const id = nanoid();
@@ -220,9 +192,6 @@ app.post(
     res.status(201).json(getDocOr404(id, req.user!.id, res, true));
   }
 );
-
-// ---- Attachments: upload a file and associate it with an existing document ----
-
 app.post(
   "/api/documents/:id/attachments",
   upload.single("file"),
@@ -231,7 +200,6 @@ app.post(
     const doc = getAccessibleDoc(req.params.id as string, userId);
     if (!doc) return res.status(404).json({ error: "Document not found" });
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
     const id = nanoid();
     db.prepare(
       `INSERT INTO attachments (id, document_id, filename, original_name, uploaded_at)
@@ -240,7 +208,6 @@ app.post(
     res.status(201).json({ id, originalName: req.file.originalname });
   }
 );
-
 app.get("/api/documents/:id/attachments", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const doc = getAccessibleDoc(req.params.id as string, userId);
@@ -252,12 +219,11 @@ app.get("/api/documents/:id/attachments", (req: AuthedRequest, res) => {
     .all(doc.id);
   res.json(rows);
 });
-
 app.get("/api/attachments/:id/download", (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const row = db
     .prepare("SELECT * FROM attachments WHERE id = ?")
-    .get(req.params.id) as
+    .get(req.params.id) as unknown as
     | { id: string; document_id: string; filename: string; original_name: string }
     | undefined;
   if (!row) return res.status(404).json({ error: "Attachment not found" });
