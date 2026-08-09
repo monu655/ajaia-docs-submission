@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
 import { api, type DocDetail } from "../api/client";
 import { useUserStore } from "../store/userStore";
 import EditorToolbar from "../components/EditorToolbar";
@@ -30,7 +31,7 @@ export default function EditorPage() {
   const contentLoadedRef = useRef(false);
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit, Underline],
     content: "",
     onUpdate: () => scheduleSave(),
   });
