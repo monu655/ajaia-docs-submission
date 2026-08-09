@@ -8,6 +8,7 @@ import EditorToolbar from "../components/EditorToolbar";
 import ShareModal from "../components/ShareModal";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+type AttachStatus = "idle" | "uploading" | "success" | "error";
 type AttachmentItem = { id: string; originalName: string; uploadedAt: string };
 
 export default function EditorPage() {
@@ -22,6 +23,8 @@ export default function EditorPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [showShare, setShowShare] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const [attachStatus, setAttachStatus] = useState<AttachStatus>("idle");
+  const [attachError, setAttachError] = useState<string | null>(null);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentLoadedRef = useRef(false);
@@ -86,7 +89,13 @@ export default function EditorPage() {
 
   async function handleAttach() {
     const file = attachInputRef.current?.files?.[0];
-    if (!file || !id) return;
+    if (!file || !id) {
+      setAttachStatus("error");
+      setAttachError("Please choose a file first.");
+      return;
+    }
+    setAttachStatus("uploading");
+    setAttachError(null);
     try {
       await api.uploadAttachment(id, file);
       const list = await api.listAttachments(id);
@@ -94,8 +103,11 @@ export default function EditorPage() {
       if (attachInputRef.current) {
         attachInputRef.current.value = "";
       }
-    } catch {
-      // Non-fatal
+      setAttachStatus("success");
+      setTimeout(() => setAttachStatus("idle"), 2500);
+    } catch (e) {
+      setAttachStatus("error");
+      setAttachError(e instanceof Error ? e.message : "Failed to attach file");
     }
   }
 
@@ -155,9 +167,17 @@ export default function EditorPage() {
                 <span style={{ fontSize: 13, color: "var(--text-muted)" }}>No attachments yet.</span>
               )}
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input ref={attachInputRef} type="file" style={{ fontSize: 12 }} />
-              <button className="btn" style={{ fontSize: 12 }} onClick={handleAttach}>Attach file</button>
+              <button className="btn" style={{ fontSize: 12 }} onClick={handleAttach} disabled={attachStatus === "uploading"}>
+                {attachStatus === "uploading" ? "Uploading..." : "Attach file"}
+              </button>
+              {attachStatus === "success" && (
+                <span style={{ fontSize: 12, color: "var(--accent)" }}>✓ Attached</span>
+              )}
+              {attachStatus === "error" && attachError && (
+                <span style={{ fontSize: 12, color: "var(--danger)" }}>{attachError}</span>
+              )}
             </div>
           </div>
         </div>
