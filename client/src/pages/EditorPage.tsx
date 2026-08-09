@@ -35,7 +35,6 @@ export default function EditorPage() {
     onUpdate: () => scheduleSave(),
   });
 
-  // Fetch the document ONCE per id. Does NOT depend on editor.
   useEffect(() => {
     if (!currentUser) {
       navigate("/login");
@@ -43,16 +42,18 @@ export default function EditorPage() {
     }
     if (!id) return;
     contentLoadedRef.current = false;
-    api.getDocument(id).then((d) => {
-      setDoc(d);
-      setTitle(d.title);
-      titleRef.current = d.title;
-    }).catch((e) => setLoadError(e.message));
+    api
+      .getDocument(id)
+      .then((d) => {
+        setDoc(d);
+        setTitle(d.title);
+        titleRef.current = d.title;
+      })
+      .catch((e) => setLoadError(e.message));
     api.listAttachments?.(id).then(setAttachments).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, currentUser]);
 
-  // Once BOTH the doc and a live editor exist, push content in exactly once.
   useEffect(() => {
     if (!doc || !editor || editor.isDestroyed) return;
     if (contentLoadedRef.current) return;
@@ -76,6 +77,9 @@ export default function EditorPage() {
       });
       setDoc(updated);
       setSaveStatus("saved");
+      setTimeout(() => {
+        setSaveStatus((s) => (s === "saved" ? "idle" : s));
+      }, 2000);
     } catch {
       setSaveStatus("error");
     }
@@ -115,7 +119,9 @@ export default function EditorPage() {
     return (
       <div style={{ padding: 32 }}>
         <div className="error-banner">{loadError}</div>
-        <button className="btn" onClick={() => navigate("/documents")}>Back to documents</button>
+        <button className="btn" onClick={() => navigate("/documents")}>
+          Back to documents
+        </button>
       </div>
     );
   }
@@ -126,22 +132,56 @@ export default function EditorPage() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 24px", borderBottom: "1px solid var(--border)", background: "var(--surface)" }}>
+      <header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "14px 24px",
+          borderBottom: "1px solid var(--border)",
+          background: "var(--surface)",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
-          <button className="btn btn-ghost" onClick={() => navigate("/documents")}>Back</button>
-          <input type="text" value={title} onChange={(e) => { setTitle(e.target.value); titleRef.current = e.target.value; }} onBlur={handleTitleBlur} disabled={!doc.isOwner} style={{ fontSize: 16, fontWeight: 600, border: "none", background: "transparent", flex: 1 }} />
+          <button className="btn btn-ghost" onClick={() => navigate("/documents")}>
+            Back
+          </button>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              titleRef.current = e.target.value;
+            }}
+            onBlur={handleTitleBlur}
+            disabled={!doc.isOwner}
+            style={{
+              fontSize: 16,
+              fontWeight: 600,
+              border: "none",
+              background: "transparent",
+              flex: 1,
+            }}
+          />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            {saveStatus === "saving" && "Saving..."}
-            {saveStatus === "saved" && "Saved"}
-            {saveStatus === "error" && "Save failed"}
-          </span>
           {!doc.isOwner && (
-            <span style={{ fontSize: 12, background: "var(--accent-soft)", color: "var(--accent)", padding: "3px 8px", borderRadius: 6 }}>Shared by {doc.owner.name}</span>
+            <span
+              style={{
+                fontSize: 12,
+                background: "var(--accent-soft)",
+                color: "var(--accent)",
+                padding: "3px 8px",
+                borderRadius: 6,
+              }}
+            >
+              Shared by {doc.owner.name}
+            </span>
           )}
           {doc.isOwner && (
-            <button className="btn" onClick={() => setShowShare(true)}>Share</button>
+            <button className="btn" onClick={() => setShowShare(true)}>
+              Share
+            </button>
           )}
         </div>
       </header>
@@ -156,10 +196,16 @@ export default function EditorPage() {
           </div>
 
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 8 }}>ATTACHMENTS</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 8 }}>
+              ATTACHMENTS
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
               {attachments.map((a) => (
-                <a key={a.id} href={"/api/attachments/" + a.id + "/download"} style={{ fontSize: 13, color: "var(--accent)" }}>
+                <a
+                  key={a.id}
+                  href={"/api/attachments/" + a.id + "/download"}
+                  style={{ fontSize: 13, color: "var(--accent)" }}
+                >
                   {a.originalName}
                 </a>
               ))}
@@ -169,11 +215,16 @@ export default function EditorPage() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input ref={attachInputRef} type="file" style={{ fontSize: 12 }} />
-              <button className="btn" style={{ fontSize: 12 }} onClick={handleAttach} disabled={attachStatus === "uploading"}>
+              <button
+                className="btn"
+                style={{ fontSize: 12 }}
+                onClick={handleAttach}
+                disabled={attachStatus === "uploading"}
+              >
                 {attachStatus === "uploading" ? "Uploading..." : "Attach file"}
               </button>
               {attachStatus === "success" && (
-                <span style={{ fontSize: 12, color: "var(--accent)" }}>✓ Attached</span>
+                <span style={{ fontSize: 12, color: "var(--accent)" }}>Attached</span>
               )}
               {attachStatus === "error" && attachError && (
                 <span style={{ fontSize: 12, color: "var(--danger)" }}>{attachError}</span>
@@ -182,6 +233,55 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+
+      {saveStatus !== "idle" && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            padding: "12px 20px",
+            borderRadius: 10,
+            fontSize: 14,
+            fontWeight: 600,
+            color: "white",
+            background:
+              saveStatus === "saving"
+                ? "#6b6558"
+                : saveStatus === "saved"
+                ? "var(--accent)"
+                : "var(--danger)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            zIndex: 100,
+          }}
+        >
+          {saveStatus === "saving" && (
+            <>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  border: "2px solid white",
+                  borderTopColor: "transparent",
+                  animation: "spin 0.6s linear infinite",
+                }}
+              />
+              Saving...
+            </>
+          )}
+          {saveStatus === "saved" && <>Saved</>}
+          {saveStatus === "error" && <>Save failed - check connection</>}
+        </div>
+      )}
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       {showShare && doc.isOwner && (
         <ShareModal doc={doc} onClose={() => setShowShare(false)} onUpdated={setDoc} />
