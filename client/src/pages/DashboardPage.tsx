@@ -110,36 +110,29 @@ export default function DashboardPage() {
                 background: "var(--surface)",
               }}
             >
-              <button
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  border: "none",
-                  background: "transparent",
-                  cursor: "pointer",
-                  flex: 1,
-                  textAlign: "left",
-                  padding: 0,
-                }}
-                onClick={() => navigate(`/documents/${d.id}`)}
-              >
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontWeight: 600 }}>{d.title}</span>
                 <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
                   Updated {formatDate(d.updatedAt)}
                 </span>
-              </button>
-              <button
-                className="btn btn-ghost btn-danger"
-                style={{ fontSize: 12, padding: "4px 10px", marginLeft: 12 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(d.id, d.title);
-                }}
-                disabled={deletingId === d.id}
-              >
-                {deletingId === d.id ? "Deleting..." : "Delete"}
-              </button>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="btn"
+                  style={{ fontSize: 12, padding: "4px 12px" }}
+                  onClick={() => navigate(`/documents/${d.id}`)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn btn-ghost btn-danger"
+                  style={{ fontSize: 12, padding: "4px 10px" }}
+                  onClick={() => handleDelete(d.id, d.title)}
+                  disabled={deletingId === d.id}
+                >
+                  {deletingId === d.id ? "Deleting..." : "Delete"}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -154,7 +147,7 @@ export default function DashboardPage() {
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {docs?.shared.map((d) => (
-            <button
+            <div
               key={d.id}
               className="card"
               style={{
@@ -162,17 +155,24 @@ export default function DashboardPage() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 padding: "14px 18px",
-                textAlign: "left",
                 border: "1px solid var(--border)",
                 background: "var(--surface)",
               }}
-              onClick={() => navigate(`/documents/${d.id}`)}
             >
-              <span style={{ fontWeight: 600 }}>{d.title}</span>
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                Updated {formatDate(d.updatedAt)}
-              </span>
-            </button>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontWeight: 600 }}>{d.title}</span>
+                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                  Updated {formatDate(d.updatedAt)}
+                </span>
+              </div>
+              <button
+                className="btn"
+                style={{ fontSize: 12, padding: "4px 12px" }}
+                onClick={() => navigate(`/documents/${d.id}`)}
+              >
+                Edit
+              </button>
+            </div>
           ))}
         </div>
       </section>
