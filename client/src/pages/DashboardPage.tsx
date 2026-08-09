@@ -108,7 +108,9 @@ export default function DashboardPage() {
                 padding: "14px 18px",
                 border: "1px solid var(--border)",
                 background: "var(--surface)",
+                cursor: "pointer",
               }}
+              onClick={() => navigate(`/documents/${d.id}`)}
             >
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontWeight: 600 }}>{d.title}</span>
@@ -116,7 +118,7 @@ export default function DashboardPage() {
                   Updated {formatDate(d.updatedAt)}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8 }} onClick={(e) => e.stopPropagation()}>
                 <button
                   className="btn"
                   style={{ fontSize: 12, padding: "4px 12px" }}
@@ -157,7 +159,9 @@ export default function DashboardPage() {
                 padding: "14px 18px",
                 border: "1px solid var(--border)",
                 background: "var(--surface)",
+                cursor: "pointer",
               }}
+              onClick={() => navigate(`/documents/${d.id}`)}
             >
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontWeight: 600 }}>{d.title}</span>
@@ -168,7 +172,10 @@ export default function DashboardPage() {
               <button
                 className="btn"
                 style={{ fontSize: 12, padding: "4px 12px" }}
-                onClick={() => navigate(`/documents/${d.id}`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/documents/${d.id}`);
+                }}
               >
                 Edit
               </button>
